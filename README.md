@@ -17,6 +17,6 @@ The **UFCampusHelp** is a platform exclusively designed for University of Florid
 ## Team Members
 
 - **Venkatesh J**  
-- **Mohan Kalyan V**  
+- **Subodh B**  
 - **Deepika P**  
-- **Subodh B**
+- **Mohan Kalyan V**
