@@ -11,7 +11,7 @@ The **UFPeerAssist** is a platform exclusively designed for University of Florid
 ## Technology Stack
 
 - **Frontend**: ReactJS, HTML, CSS  
-- **Backend**: Go  
+- **Backend**: Go , Gin
 - **Database**: PostgreSQL  
 
 ## Team Members
@@ -20,3 +20,13 @@ The **UFPeerAssist** is a platform exclusively designed for University of Florid
 - **Subodh B**  
 - **Deepika P**  
 - **Mohan Kalyan V**
+
+
+## How to run
+- clone the project, head into the root directory
+- to start the go server - head to the backend directory and in the terminal/bash run the below command
+- **go mod tidy** (only for the first time)
+- **go run main.go**
+- to start the npm server - open a new terminal/bash and head into the frontend directory and run the below command
+- **npm start**
+- **Prerequisite** - Go and react(npm) needs to be installed
