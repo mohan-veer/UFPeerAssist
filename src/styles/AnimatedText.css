@@ -1,0 +1,34 @@
+/* Import a beautiful, elegant font */
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@500&display=swap");
+
+/* Animated Text Container */
+.animated-text-container {
+  text-align: center;
+  margin-top: 15px; /* 🔽 Reduced space */
+  font-family: "Lora", serif; /* 🆕 Changed font */
+  color: #004d40; 
+  line-height: 2.2; /* Better line spacing */
+  padding: 10px; /* Less padding */
+}
+
+/* Bootstrap Enhancements */
+.italian-text {
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: bold;
+  font-size: 22px; /* 🔽 Slightly smaller */
+  animation: fadeIn 1s ease-in-out;
+}
+
+/* Word-by-Word Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px); /* Less movement */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

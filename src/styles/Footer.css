@@ -1,0 +1,55 @@
+.footer {
+    text-align: center;
+    padding: 1rem;
+    background: #004d40;
+    color: white;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
+  
+  .footer-links a {
+    color: white;
+    text-decoration: none;
+    margin: 0 10px;
+  }
+  
+  .footer-links a:hover {
+    text-decoration: underline;
+  }
+
+ /* 🔹 Contact Us Hover Effect */
+.contact-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* 🔹 Contact Info (Initially Hidden) */
+.contact-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  color: black;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  display: none; /* ✅ Initially hidden */
+  z-index: 10;
+  white-space: nowrap;
+  text-align: left;
+}
+
+/* 🔹 Phone Number */
+.contact-dropdown p:first-child {
+  margin-bottom: 8px; /* ✅ Adds space between phone and email */
+}
+
+/* 🔹 Show Contact Info on Hover */
+.contact-container:hover .contact-dropdown {
+  display: block;
+}
