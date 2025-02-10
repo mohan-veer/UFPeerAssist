@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // User model (Users Table)
 type Users struct {
 	Email  string `gorm:"primaryKey" json:"email"`
@@ -11,4 +13,11 @@ type Users struct {
 type User_Auth struct {
 	Email    string `gorm:"primaryKey" json:"email"`
 	Password string `json:"password"`
+}
+
+// OTP struct
+type OTP struct {
+	Email      string    `gorm:"primaryKey"`
+	Code       string    `gorm:"not null"`
+	Expires_At time.Time `gorm:"not null"`
 }
