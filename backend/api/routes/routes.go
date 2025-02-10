@@ -12,4 +12,6 @@ func SetupRoutes(router *gin.Engine) {
 
 	router.POST("/signup", handlers.Signup)
 	router.POST("/login", handlers.Login)
+	router.POST("/requestPasswordReset", handlers.GenerateOTPForResetPassword)
+	router.POST("/validateOtpAndUpdatePassword", handlers.ValidateOtpAndUpdatePassword)
 }
