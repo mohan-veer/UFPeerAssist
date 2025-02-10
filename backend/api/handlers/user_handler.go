@@ -109,5 +109,30 @@ func Signup(c *gin.Context) {
 * Password: password entered by user
  */
 func Login(c *gin.Context) {
-	//yet to implement
+	var input struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	// Bind JSON input
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user exists
+	var auth models.User_Auth
+	if err := db.First(&auth, "email = ?", input.Email).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or signup before login"})
+		return
+	}
+
+	// Verify password
+	if !utils.CheckPassword(auth.Password, input.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	// Success response
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful!"})
 }
