@@ -1,0 +1,48 @@
+.how-it-works {
+    padding: 60px 20px;
+    background-color: #f0f0f0;
+    text-align: center;
+  }
+  
+  .how-it-works .section-title {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+    color: #0021A5; /* UF Blue */
+  }
+  
+  .steps-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .step-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    width: 250px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .step-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .step-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+  }
+  
+  .step-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: #FA4616; /* UF Orange */
+  }
+  
+  .step-description {
+    font-size: 1rem;
+    color: #555;
+  }
+  

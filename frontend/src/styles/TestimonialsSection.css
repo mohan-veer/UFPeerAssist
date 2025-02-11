@@ -1,0 +1,57 @@
+.testimonials-section {
+    padding: 60px 20px;
+    background-color: #fff;
+    text-align: center;
+  }
+  
+  .testimonials-title {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+    color: #0021A5; /* UF Blue */
+  }
+  
+  .testimonials-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .testimonial-card {
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .testimonial-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+  }
+  
+  .testimonial-name {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: #FA4616; /* UF Orange */
+  }
+  
+  .testimonial-role {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 15px;
+  }
+  
+  .testimonial-text {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #333;
+    font-style: italic;
+  }
+  
