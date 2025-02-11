@@ -1,0 +1,67 @@
+/* 🔹 Full-Page Styling */
+.login-page {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* ✅ Pushes form higher */
+  background: transparent;
+  flex-direction: column;
+  padding-top: 70px; /* ✅ Adjust this value to fine-tune position */
+}
+
+/* 🔹 Centered Login Form */
+.login-container {
+  position: relative;
+  max-width: 420px;
+  width: 90%;
+  padding: 35px 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* 🔹 Centered Heading */
+.center-heading {
+  font-size: 28px;
+  font-weight: bold;
+  color: #1b2a4e;
+  margin-bottom: 15px;
+}
+
+/* 🔹 Fix Form Fields */
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* 🔹 Fix Input Fields */
+.login-container input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+/* 🔹 Fix Button */
+.login-container button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+  background: #004d40;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.login-container button:hover {
+    background: #00332e;
+}
