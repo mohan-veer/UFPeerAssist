@@ -9,6 +9,7 @@ import HowItWorksSection from "./components/HowItWorksSection";
 import CallToActionSection from "./components/CallToActionSection";
 import Footer from "./components/Footer";
 import "./App.css";
+import ResetPassword from "./components/ResetPassword";
 
 const Home = () => {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset" element={<ResetPassword />} />
       </Routes>
     </Router>
   );
