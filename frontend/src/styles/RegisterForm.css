@@ -1,0 +1,94 @@
+/* 🔹 Full Page Layout */
+.register-page {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh; /* ✅ Allows full-page scrolling */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  flex-direction: column;
+  padding-top: 20px;
+  overflow-y: auto; /* ✅ Allows full-page scrolling */
+}
+
+/* 🔹 Fix the Form Layout */
+.register-container {
+  position: relative;
+  max-width: 600px; /* ✅ Reduced width for better alignment */
+  width: 90%;
+  min-height: 80vh; /* ✅ Ensures full form is visible */
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  padding: 25px 30px; /* ✅ Reduced padding */
+  overflow: visible; /* ✅ Prevents form-specific scrollbar */
+}
+
+/* 🔹 Ensure Heading is Clearly Visible */
+.center-heading {
+  text-align: center;
+  font-size: 26px; /* ✅ Slightly adjusted font */
+  font-weight: bold;
+  color: #1b2a4e;
+  margin-bottom: 15px;
+}
+
+/* 🔹 Improve Form Layout */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* ✅ Adds spacing between input fields */
+}
+
+/* 🔹 Improve Labels */
+label {
+  text-align: left;
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+/* 🔹 Input Fields */
+input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+/* 🔹 Fix Button Visibility */
+button {
+  width: 100%;
+  background: #004d40;
+  color: white;
+  padding: 12px;
+  border: none;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  margin-top: 15px;
+}
+
+button:hover {
+  background: #00332e;
+}
+
+/* 🔹 Error and Success Messages */
+.error {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.success {
+  color: green;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
