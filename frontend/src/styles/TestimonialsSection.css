@@ -29,12 +29,15 @@
   }
   
   .testimonial-image {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
+    width: 100px;        /* Increase width */
+    height: 100px;       /* Increase height */
+    border-radius: 50%;  /* Keep them circular */
+    object-fit: cover;   /* Ensure proper cropping */
     margin-bottom: 15px;
+    border: 3px solid #FA4616;  /* Optional: add a border in UF Orange */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Optional: add a subtle shadow */
   }
+  
   
   .testimonial-name {
     font-size: 1.5rem;

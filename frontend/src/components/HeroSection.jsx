@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/images/logo.jpg"; // adjust the path if needed
+import gator from "../assets/images/Florida_Gators_gator_logo.png"
 import "../styles/HeroSection.css";
 
 const HeroSection = () => {
@@ -10,6 +11,9 @@ const HeroSection = () => {
       <nav className="navbar">
         <div className="navbar-logo">
           <img src={logo} alt="UF Peer Assist Logo" />
+        </div>
+        <div className="navbar-logo-right">
+          <img src={gator} alt="UF Peer Assist Logo" />
         </div>
       </nav>
       
