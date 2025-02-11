@@ -1,0 +1,48 @@
+.features-section {
+    background-color: #f9f9f9;
+    padding: 60px 20px;
+    text-align: center;
+  }
+  
+  .features-title {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+    color: #0021A5; /* UF Blue */
+  }
+  
+  .features-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .feature-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 250px;
+    transition: transform 0.3s ease;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .feature-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+  }
+  
+  .feature-card-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: #FA4616; /* UF Orange */
+  }
+  
+  .feature-card-description {
+    color: #666;
+    font-size: 1rem;
+  }
+  
