@@ -1,71 +1,66 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "../styles/Login.css";
+import "./../styles/LoginPage.css";
+import ParticleBackgroundOtherScreens from "./ParticleBackgroundOtherScreens";
+// import Navbar from "./Navbar";
 
-function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+const LoginPage = () => {
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setError("");
+
     try {
-      const response = await axios.post("http://localhost:8080/login", {
-        email,
-        password,
+      const response = await fetch("http://localhost:8080/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
-      console.log(response.data);
-      // After a successful login, route the user to the dashboard or another protected page.
-      navigate("/dashboard");
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.token);
+        navigate("/dashboard");
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Invalid credentials.");
+      }
     } catch (err) {
-      console.error(err);
-      setError("Login failed. Please check your credentials.");
+      setError("Something went wrong. Please try again.");
     }
   };
 
   return (
+    // <div className="navbar">
+    //     <Navbar/>
+    <div className="login-page">
+      <ParticleBackgroundOtherScreens/>
     <div className="login-container">
-      <h2>Login</h2>
-      {error && <p className="error-msg">{error}</p>}
+      <h2>Log in</h2>
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Email:</label>
-          <input
-            type="email"
-            value={email}
-            placeholder="Enter your email"
-            required
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="form-group">
-          <label>Password:</label>
-          <input
-            type="password"
-            value={password}
-            placeholder="Enter your password"
-            required
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <button type="submit">Login</button>
+        <label>Username or Email *</label>
+        <input type="text" name="username" value={formData.username} onChange={handleChange} required />
+        <label>Password *</label>
+        <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+        <button type="submit">🔑 Log in</button>
       </form>
-      <p>
-        Don't have an account?{" "}
-        <span
-          className="link"
-          onClick={() => {
-            navigate("/register");
-          }}
-        >
-          Register here
-        </span>
-      </p>
+        {/* ✅ Forgot Password Link */}
+        <div className="forgot-password">
+          <a href="/reset">Forgot Password?</a>
+        </div>
+      {error && <p className="error">{error}</p>}
     </div>
+    </div>
+    // </div>
   );
-}
+};
 
-export default Login;
+export default LoginPage;
+
