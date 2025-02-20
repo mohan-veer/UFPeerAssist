@@ -18,7 +18,7 @@ var db *gorm.DB
 
 func init() {
 	// PostgreSQL connection string
-	dsn := "host=localhost user=postgres password= dbname=ufpeerassist port=5432 sslmode=disable"
+	dsn := "host=localhost user=postgres password=Noentry@7023 dbname=ufpeerassist port=5432 sslmode=disable"
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
@@ -30,7 +30,7 @@ func init() {
 	}
 
 	// Auto-migrate tables
-	db.AutoMigrate(&models.Users{}, &models.User_Auth{})
+	db.AutoMigrate(&models.Users{}, &models.User_Auth{}, &models.OTP{})
 
 	fmt.Println("Database connected and migrated!")
 }
