@@ -1,0 +1,31 @@
+/* NotificationsPanel.css */
+
+.notifications-panel {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 20px;
+  }
+  
+  .notifications-panel h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  
+  .notifications-panel ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .notifications-panel ul li {
+    font-size: 14px;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .notifications-panel ul li:last-child {
+    border-bottom: none;
+  }
+  

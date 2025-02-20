@@ -1,0 +1,46 @@
+/* DashboardHeader.css */
+
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #003366; /* UF blue tone */
+    color: #fff;
+    padding: 10px 20px;
+  }
+  
+  /* Adjusted logo image size */
+  .dashboard-header .logo img {
+    width: 80px; /* Decrease width to make the logo smaller */
+    height: auto; /* Maintain the aspect ratio */
+  }
+  
+  .header-nav ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .header-nav ul li {
+    margin-right: 20px;
+  }
+  
+  .header-nav ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: 500;
+  }
+  
+  .profile {
+    display: flex;
+    align-items: center;
+  }
+  
+  .profile img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
