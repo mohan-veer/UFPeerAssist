@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 	"ufpeerassist/backend/api/utils"
 	"ufpeerassist/backend/models"
 
@@ -148,4 +149,115 @@ func Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful!"})
+}
+
+// Request Password Reset - Generates OTP
+func GenerateOTPForResetPassword(c *gin.Context) {
+	var request struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	// Check if the user exists
+	var user models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": request.Email}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Generate a new OTP
+	otp := utils.GenerateOTP()
+	expirationTime := time.Now().Add(10 * time.Minute) // OTP valid for 10 minutes
+
+	// ✅ Insert OTP with expiration time (MongoDB will auto-delete)
+	_, err = otpCollection.UpdateOne(
+		context.TODO(),
+		bson.M{"email": request.Email},
+		bson.M{"$set": bson.M{"code": otp, "expires_at": expirationTime}},
+		options.Update().SetUpsert(true),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate OTP"})
+		return
+	}
+
+	// Send OTP via email (implement `utils.SendOTP`)
+	if err := utils.SendOTP(request.Email, otp); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send OTP"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "OTP sent to your email"})
+}
+
+// Validate OTP and Update Password
+func ValidateOtpAndUpdatePassword(c *gin.Context) {
+	var request struct {
+		Email    string `json:"email" binding:"required,email"`
+		OTP      string `json:"otp" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	// Check if OTP exists (MongoDB TTL will auto-delete expired OTPs)
+	var storedOTP models.OTP
+	err := otpCollection.FindOne(context.TODO(), bson.M{"email": request.Email, "code": request.OTP}).Decode(&storedOTP)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired OTP"})
+		return
+	}
+
+	// Hash the new password before storing it
+	hashedPassword, err := utils.HashPassword(request.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	// Start MongoDB transaction for password update
+	session, err := client.StartSession()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer session.EndSession(context.TODO())
+
+	// Transaction Function
+	callback := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// ✅ Update password in auth collection
+		_, err = authCollection.UpdateOne(sessCtx,
+			bson.M{"email": request.Email},
+			bson.M{"$set": bson.M{"password": hashedPassword}},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// ✅ Delete OTP after successful password reset
+		_, err = otpCollection.DeleteOne(sessCtx, bson.M{"email": request.Email})
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	// Execute transaction
+	_, err = session.WithTransaction(context.TODO(), callback)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Transaction failed", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "OTP verified. Password updated successfully!"})
 }
