@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+	"ufpeerassist/backend/api/handlers"
 	"ufpeerassist/backend/api/routes"
 
 	"github.com/gin-contrib/cors"
@@ -9,6 +10,8 @@ import (
 )
 
 func main() {
+
+	handlers.InitMongoDB()
 
 	router := gin.Default()
 

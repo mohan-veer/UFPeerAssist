@@ -1,47 +1,57 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 	"ufpeerassist/backend/api/utils"
 	"ufpeerassist/backend/models"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var db *gorm.DB
+// MongoDB client and collections
+var client *mongo.Client
+var usersCollection *mongo.Collection
+var authCollection *mongo.Collection
+var otpCollection *mongo.Collection
 
-func init() {
-	// PostgreSQL connection string
-	dsn := "host=localhost user=postgres password= dbname=ufpeerassist port=5432 sslmode=disable"
+// Initialize MongoDB connection
+func InitMongoDB() {
+	uri := "mongodb://localhost:27017"
+
+	// Connect to MongoDB
 	var err error
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true, // Prevents pluralization of table names
-		},
-	})
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatal("Failed to connect to PostgreSQL:", err)
+		log.Fatal("❌ Failed to connect to MongoDB:", err)
 	}
 
-	// Auto-migrate tables
-	db.AutoMigrate(&models.Users{}, &models.User_Auth{})
+	// Select database and collections
+	db := client.Database("ufpeerassist")
+	usersCollection = db.Collection("users")
+	authCollection = db.Collection("auth")
+	otpCollection = db.Collection("otp") // Add OTP collection
 
-	fmt.Println("Database connected and migrated!")
+	// ✅ Create TTL index on "expires_at"
+	indexModel := mongo.IndexModel{
+		Keys:    bson.M{"expires_at": 1},                  // Index on expires_at field
+		Options: options.Index().SetExpireAfterSeconds(0), // TTL index (expire immediately when time is reached)
+	}
+
+	_, err = otpCollection.Indexes().CreateOne(context.TODO(), indexModel)
+	if err != nil {
+		log.Fatal("❌ Failed to create TTL index:", err)
+	}
+
+	fmt.Println("✅ MongoDB connected, TTL index for OTP set!")
 }
 
-/* Signup Endpoint
-* Parameters:
-* Name: username
-* Email: user email id
-* Password: new password entered by user
-* Mobile: mobile number of the user
- */
+// Signup Handler with Transaction Support
 func Signup(c *gin.Context) {
 	var input struct {
 		Name     string `json:"name" binding:"required"`
@@ -50,20 +60,15 @@ func Signup(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 
-	// Bind JSON input
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		fmt.Println("erro in binding")
 		return
 	}
 
-	// Start a transaction
-	tx := db.Begin()
-
 	// Check if user already exists
 	var existingUser models.Users
-	if err := tx.First(&existingUser, "email = ?", input.Email).Error; err == nil {
-		tx.Rollback() // Rollback transaction
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": input.Email}).Decode(&existingUser)
+	if err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
 		return
 	}
@@ -71,60 +76,67 @@ func Signup(c *gin.Context) {
 	// Hash the password
 	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
-		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 
-	// Insert user into users table
-	user := models.Users{
-		Email:  input.Email,
-		Name:   input.Name,
-		Mobile: input.Mobile,
+	// Start MongoDB Transaction
+	session, err := client.StartSession()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
 	}
-	if err := tx.Create(&user).Error; err != nil {
-		tx.Rollback()
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+	defer session.EndSession(context.TODO())
+
+	// Transaction Function
+	callback := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// Insert user
+		_, err := usersCollection.InsertOne(sessCtx, models.Users{
+			Email:  input.Email,
+			Name:   input.Name,
+			Mobile: input.Mobile,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Insert authentication data
+		_, err = authCollection.InsertOne(sessCtx, models.User_Auth{
+			Email:    input.Email,
+			Password: hashedPassword,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	// Execute transaction
+	_, err = session.WithTransaction(context.TODO(), callback)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Transaction failed", "details": err.Error()})
 		return
 	}
 
-	// Insert password into user_auth table
-	auth := models.User_Auth{
-		Email:    input.Email,
-		Password: hashedPassword,
-	}
-	if err := tx.Create(&auth).Error; err != nil {
-		tx.Rollback() // If auth insert fails, rollback everything
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store credentials"})
-		return
-	}
-
-	// Commit the transaction (if everything succeeds)
-	tx.Commit()
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully!"})
 }
 
-/* Login Endpoint
-* Parameters:
-* Email: user email id
-* Password: password entered by user
- */
+// Login Handler
 func Login(c *gin.Context) {
 	var input struct {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required"`
 	}
 
-	// Bind JSON input
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Check if user exists
 	var auth models.User_Auth
-	if err := db.First(&auth, "email = ?", input.Email).Error; err != nil {
+	err := authCollection.FindOne(context.TODO(), bson.M{"email": input.Email}).Decode(&auth)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or signup before login"})
 		return
 	}
@@ -135,89 +147,5 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Success response
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful!"})
-}
-
-/* Request-Reset-Password Endpoint: this function will send an otp which is valid for 10 minutes to input email address
-* Parameters
-* email: to send the otp
- */
-func GenerateOTPForResetPassword(c *gin.Context) {
-	var request struct {
-		Email string `json:"email"`
-	}
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request"})
-		return
-	}
-
-	var user models.Users
-	if err := db.Where("email = ?", request.Email).First(&user).Error; err != nil {
-		c.JSON(404, gin.H{"error": "User not found"})
-		return
-	}
-
-	otp := utils.GenerateOTP()
-	db.Save(&models.OTP{
-		Email:      request.Email,
-		Code:       otp,
-		Expires_At: time.Now().Add(10 * time.Minute),
-	})
-
-	if err := utils.SendOTP(request.Email, otp); err != nil {
-		c.JSON(500, gin.H{"error": "Failed to send OTP"})
-		fmt.Println("failed to send OTP")
-		return
-	}
-
-	c.JSON(200, gin.H{"message": "OTP sent to your email"})
-}
-
-/* Validate-OTP Endpoint: this function will validate the otp entered by user for password change
-* Parameters
-* email: user email id for which passwords needs to reset
-* otp: code which is valid for 10 minutes
- */
-func ValidateOtpAndUpdatePassword(c *gin.Context) {
-	var request struct {
-		Email    string `json:"email"`
-		OTP      string `json:"otp"`
-		Password string `json:"password"`
-	}
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request"})
-		return
-	}
-
-	var storedOTP models.OTP
-	if err := db.Where("email = ? AND code = ?", request.Email, request.OTP).First(&storedOTP).Error; err != nil {
-		c.JSON(401, gin.H{"error": "Invalid OTP"})
-		return
-	}
-
-	if time.Now().UTC().After(storedOTP.Expires_At.UTC()) {
-		c.JSON(401, gin.H{"error": "OTP expired"})
-		fmt.Println((time.Now().UTC()))
-		fmt.Println(storedOTP.Expires_At.UTC())
-		return
-	}
-
-	// as OTP is validated, update the password by encrypting
-	// Hash the password
-	hashedPassword, err := utils.HashPassword(request.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	// Update password into user_auth table
-	db.Save(&models.User_Auth{
-		Email:    request.Email,
-		Password: hashedPassword,
-	})
-
-	c.JSON(200, gin.H{"message": "OTP Verified. New password is updated!"})
 }
