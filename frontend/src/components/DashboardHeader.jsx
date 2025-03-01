@@ -1,5 +1,6 @@
 // DashboardHeader.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 import logo from "../assets/images/logo.jpg";
 import student1 from "../assets/images/student1.jpg";
 import "../styles/DashboardHeader.css";
@@ -18,8 +19,11 @@ const DashboardHeader = () => {
         </ul>
       </nav>
       <div className="profile">
-        <img src={student1} alt="Profile" />
-        <span>Mohan Potu</span>
+        {/* Wrap profile data in a Link to navigate to the user profile page */}
+        <Link to="/profile" className="profile-link">
+          <img src={student1} alt="Profile" />
+          <span>Student Name</span>
+        </Link>
       </div>
     </header>
   );
