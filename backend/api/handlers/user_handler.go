@@ -23,7 +23,10 @@ var otpCollection *mongo.Collection
 
 // Initialize MongoDB connection
 func InitMongoDB() {
-	uri := "mongodb://localhost:27017"
+	// generic uri
+	//uri := "mongodb://localhost:27017"
+	// replication set uri
+	uri := "mongodb://localhost:27017/ufpeerassist?replicaSet=rs0"
 
 	// Connect to MongoDB
 	var err error
@@ -260,4 +263,96 @@ func ValidateOtpAndUpdatePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "OTP verified. Password updated successfully!"})
+}
+
+func UpdateUserProfile(c *gin.Context) {
+	// Get email from URL parameter
+	email := c.Param("email")
+
+	// Define input structure for profile update
+	var input struct {
+		Name   string `json:"name" binding:"omitempty"`
+		Mobile string `json:"mobile" binding:"omitempty"`
+		// next sprint - to add other fields related to user
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Prepare update document with only provided fields
+	updateDoc := bson.M{}
+
+	if input.Name != "" {
+		updateDoc["name"] = input.Name
+	}
+
+	if input.Mobile != "" {
+		updateDoc["mobile"] = input.Mobile
+	}
+
+	// If no fields were provided to update
+	if len(updateDoc) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No fields provided for update"})
+		return
+	}
+
+	// Update the user profile
+	result, err := usersCollection.UpdateOne(
+		context.TODO(),
+		bson.M{"email": email},
+		bson.M{"$set": updateDoc},
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile", "details": err.Error()})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Profile updated successfully",
+		"updated": result.ModifiedCount > 0,
+	})
+
+}
+
+func GetUserProfile(c *gin.Context) {
+
+	// Get email from URL parameter
+	email := c.Param("email")
+
+	// Define a struct to hold the user data
+	type UserProfile struct {
+		Email  string `json:"email" bson:"email"`
+		Name   string `json:"name" bson:"name"`
+		Mobile string `json:"mobile" bson:"mobile"`
+		// Add any other fields you want to include
+	}
+
+	var profile UserProfile
+
+	// Find the user by email
+	err := usersCollection.FindOne(
+		context.TODO(),
+		bson.M{"email": email},
+	).Decode(&profile)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve profile", "details": err.Error()})
+		return
+	}
+
+	// Return the user profile
+	c.JSON(http.StatusOK, profile)
+
 }
