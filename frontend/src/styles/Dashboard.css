@@ -1,0 +1,21 @@
+/* Dashboard.css */
+
+.dashboard-container {
+    background-color: blueviolet; /*ye nikaal baad me*/
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+  }
+  
+  .dashboard-main {
+    flex: 1;
+    display: flex;
+  }
+  
+  .dashboard-content {
+    flex: 1;
+    padding: 20px;
+    background-color: #f5f5f5;
+  }
+  
