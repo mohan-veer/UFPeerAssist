@@ -19,6 +19,7 @@ func SetupRoutes(router *gin.Engine) {
 	// user routes
 	router.GET("/users/:email/profileinfo", handlers.GetUserProfile)
 	router.PUT("/users/:email/profileupdate", handlers.UpdateUserProfile)
+	router.GET("/users/:email/created-tasks", handlers.GetUserCreatedTasks) // self tasks
 
 	// user post a task
 	// task routes with no conflicts
