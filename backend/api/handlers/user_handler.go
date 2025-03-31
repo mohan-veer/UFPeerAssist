@@ -10,6 +10,7 @@ import (
 	"ufpeerassist/backend/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -141,7 +142,7 @@ func Login(c *gin.Context) {
 	var auth models.User_Auth
 	err := authCollection.FindOne(context.TODO(), bson.M{"email": input.Email}).Decode(&auth)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or signup before login"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
@@ -151,7 +152,24 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful!"})
+	// Create JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email": input.Email,
+		"exp":   time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
+	})
+
+	// Sign the token with a secret key
+	secretKey := "your-secret-key-here" // In production, use environment variables
+	tokenString, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful!",
+		"token":   tokenString,
+	})
 }
 
 // Request Password Reset - Generates OTP
@@ -355,4 +373,53 @@ func GetUserProfile(c *gin.Context) {
 	// Return the user profile
 	c.JSON(http.StatusOK, profile)
 
+}
+
+// GetUserCreatedTasks returns all tasks created by a specific user
+func GetUserCreatedTasks(c *gin.Context) {
+	// Get user email from URL parameter
+	userEmail := c.Param("email")
+
+	// Verify that user exists
+	var user models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": userEmail}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required. User not found."})
+		return
+	}
+
+	// Build filter to find tasks created by this user
+	filter := bson.M{
+		"creator_email": userEmail,
+	}
+
+	// Define options for sorting - newest first
+	findOptions := options.Find().
+		SetSort(bson.M{"created_at": -1}) // Sort by newest first (descending order)
+
+	// Execute the query
+	cursor, err := tasksCollection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks", "details": err.Error()})
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	// Decode results
+	var tasks []models.Task
+	if err := cursor.All(context.TODO(), &tasks); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode tasks", "details": err.Error()})
+		return
+	}
+
+	// Ensure tasks is never null
+	if tasks == nil {
+		tasks = []models.Task{}
+	}
+
+	// Return all tasks created by the user
+	c.JSON(http.StatusOK, gin.H{
+		"tasks": tasks,
+		"count": len(tasks),
+	})
 }

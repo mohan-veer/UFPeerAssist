@@ -244,11 +244,13 @@ Excludes tasks created by the viewer and tasks the viewer has already applied fo
 func GetAllTasksForUser(c *gin.Context) {
 	// Get viewer's email from URL parameter
 	viewerEmail := c.Param("viewer_email")
+	fmt.Printf("Fetching tasks for user: %s\n", viewerEmail)
 
 	// Verify that viewer exists (authentication check)
 	var viewer models.Users
 	err := usersCollection.FindOne(context.TODO(), bson.M{"email": viewerEmail}).Decode(&viewer)
 	if err != nil {
+		fmt.Printf("User not found: %s, error: %v\n", viewerEmail, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required. User not found."})
 		return
 	}
@@ -267,6 +269,7 @@ func GetAllTasksForUser(c *gin.Context) {
 	// Filter by category if provided
 	if category := c.Query("category"); category != "" {
 		filter["work_type"] = category
+		fmt.Printf("Filtering by category: %s\n", category)
 	}
 
 	// Filter by date range if provided
@@ -277,6 +280,9 @@ func GetAllTasksForUser(c *gin.Context) {
 				filter["task_date"] = bson.M{}
 			}
 			filter["task_date"].(bson.M)["$gte"] = parsedFromDate
+			fmt.Printf("Filtering from date: %s\n", fromDate)
+		} else {
+			fmt.Printf("Invalid from_date format: %s\n", fromDate)
 		}
 	}
 
@@ -287,8 +293,13 @@ func GetAllTasksForUser(c *gin.Context) {
 				filter["task_date"] = bson.M{}
 			}
 			filter["task_date"].(bson.M)["$lte"] = parsedToDate
+			fmt.Printf("Filtering to date: %s\n", toDate)
+		} else {
+			fmt.Printf("Invalid to_date format: %s\n", toDate)
 		}
 	}
+
+	fmt.Printf("Query filter: %+v\n", filter)
 
 	// Define options for sorting - oldest first
 	findOptions := options.Find().
@@ -297,6 +308,7 @@ func GetAllTasksForUser(c *gin.Context) {
 	// Execute the query
 	cursor, err := tasksCollection.Find(context.TODO(), filter, findOptions)
 	if err != nil {
+		fmt.Printf("Error retrieving tasks: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks", "details": err.Error()})
 		return
 	}
@@ -305,19 +317,30 @@ func GetAllTasksForUser(c *gin.Context) {
 	// Decode results
 	var tasks []models.Task
 	if err := cursor.All(context.TODO(), &tasks); err != nil {
+		fmt.Printf("Error decoding tasks: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode tasks", "details": err.Error()})
 		return
 	}
+
+	// Ensure tasks is never null, use empty array instead
+	if tasks == nil {
+		tasks = []models.Task{}
+	}
+
+	fmt.Printf("Found %d tasks for user %s\n", len(tasks), viewerEmail)
 
 	// Increment view count for each task (do this in background to not slow down response)
 	go func() {
 		ctx := context.Background()
 		for _, task := range tasks {
-			_, _ = tasksCollection.UpdateOne(
+			_, err := tasksCollection.UpdateOne(
 				ctx,
 				bson.M{"_id": task.ID},
 				bson.M{"$inc": bson.M{"views": 1}},
 			)
+			if err != nil {
+				fmt.Printf("Error incrementing view count for task %s: %v\n", task.ID, err)
+			}
 		}
 	}()
 
