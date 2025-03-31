@@ -1,18 +1,18 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.jpg";
 import student1 from "../assets/images/student1.jpg";
+import { logout } from "../utils/auth"; // Import the logout utility
 import "../styles/DashboardHeader.css";
 
 const DashboardHeader = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear token from localStorage
-    localStorage.removeItem("token");
+    // Use the logout utility function
+    logout();
     // Redirect to login page
     navigate("/login");
-    
   };
 
   return (
@@ -22,9 +22,9 @@ const DashboardHeader = () => {
       </div>
       <nav className="header-nav">
         <ul>
-          <li><a href="/dashboard">Home</a></li>
-          <li><a href="/post-task">Post a Task</a></li>
-          <li><a href="/messages">Messages</a></li>
+          <li><Link to="/dashboard">Home</Link></li>
+          <li><Link to="/post-task">Post a Task</Link></li>
+          <li><Link to="/messages">Messages</Link></li>
         </ul>
       </nav>
       <div className="profile-section">
@@ -32,7 +32,6 @@ const DashboardHeader = () => {
           <img src={student1} alt="Profile" />
           <span>Student Name</span>
         </Link>
-        {/* Add Logout Button */}
         <button className="logout-button" onClick={handleLogout}>
           Logout
         </button>
