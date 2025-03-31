@@ -20,62 +20,38 @@ const LoginPage = () => {
       const response = await fetch("http://localhost:8080/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        }),
+        body: JSON.stringify(formData),
       });
-
-      const data = await response.json();
-      
       if (response.ok) {
-        // Handle successful login
-        // Note: Add token handling when you implement JWT
+        const data = await response.json();
+        // Optionally, save token if backend returns one:
+        // localStorage.setItem("token", data.token);
         navigate("/dashboard");
       } else {
-        setError(data.error || "Invalid email or password");
+        const errorData = await response.json();
+        setError(errorData.error || "Invalid credentials.");
       }
     } catch (err) {
-      setError("Connection error. Please try again later.");
+      setError("Something went wrong. Please try again.");
     }
   };
 
   return (
     <div className="login-page">
-      <ParticleBackgroundOtherScreens/>
+      <ParticleBackgroundOtherScreens />
       <div className="login-container">
-        <h2>Log In to Your Account</h2>
+        <h2>Log in</h2>
         <form onSubmit={handleSubmit}>
-          <label>Email Address *</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            placeholder="name@example.com"
-          />
-
+          <label>Email *</label>
+          <input type="email" name="email" value={formData.email} onChange={handleChange} required />
           <label>Password *</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            minLength="6"
-          />
-
-          <button type="submit" className="login-button">
-            🔑 Log In
-          </button>
+          <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+          <button type="submit">🔑 Log in</button>
         </form>
-
         <div className="forgot-password">
           <a href="/reset">Forgot Password?</a>
         </div>
-
-        {error && <p className="error-message">{error}</p>}
+        {error && <p className="error">{error}</p>}
       </div>
     </div>
   );
