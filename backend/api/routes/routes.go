@@ -26,5 +26,7 @@ func SetupRoutes(router *gin.Engine) {
 
 	// Routes with authentication via viewer_email parameter
 	router.GET("/tasks/feed/:viewer_email", handlers.GetAllTasksForUser) // Get all available tasks
+	router.GET("/appliedtasks/:viewer_email", handlers.GetAppliedTasks)  // get all the taks that user applied for
+	router.POST("/tasks/:task_id/apply/:email", handlers.ApplyForTask)   // Apply for a task
 
 }

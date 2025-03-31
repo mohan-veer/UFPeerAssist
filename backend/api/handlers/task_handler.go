@@ -327,3 +327,185 @@ func GetAllTasksForUser(c *gin.Context) {
 		"count": len(tasks),
 	})
 }
+
+// ApplyForTask allows a user to apply for a task
+func ApplyForTask(c *gin.Context) {
+	// Get task ID from URL parameter
+	taskID := c.Param("task_id")
+
+	// Get applicant's email from URL parameter
+	applicantEmail := c.Param("email")
+
+	// Verify that applicant exists
+	var applicant models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": applicantEmail}).Decode(&applicant)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required. User not found."})
+		return
+	}
+
+	// Convert string ID to ObjectID
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID format"})
+		return
+	}
+
+	// Find the task
+	var task models.Task
+	err = tasksCollection.FindOne(
+		context.TODO(),
+		bson.M{"_id": objectID},
+	).Decode(&task)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		return
+	}
+
+	// Check if task is open
+	if task.Status != models.Open {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Task is not open for applications"})
+		return
+	}
+
+	// Check if user is the creator (can't apply to own task)
+	if task.CreatorEmail == applicantEmail {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You cannot apply to your own task"})
+		return
+	}
+
+	// Check if user has already applied
+	for _, email := range task.Applicants {
+		if email == applicantEmail {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "You have already applied for this task"})
+			return
+		}
+	}
+
+	// Add user to applicants list
+	update := bson.M{
+		"$push": bson.M{"applicants": applicantEmail},
+	}
+
+	_, err = tasksCollection.UpdateOne(
+		context.TODO(),
+		bson.M{"_id": objectID},
+		update,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to apply for task", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully applied for task",
+	})
+}
+
+/* GetAppliedTasks: returns all tasks that a user has applied for
+ */
+func GetAppliedTasks(c *gin.Context) {
+	// Get viewer's email from URL parameter
+	viewerEmail := c.Param("viewer_email")
+
+	// Verify that viewer exists (authentication check)
+	var viewer models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": viewerEmail}).Decode(&viewer)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required. User not found."})
+		return
+	}
+
+	// Build filter to find tasks where the user is in applicants array
+	filter := bson.M{
+		"applicants": viewerEmail, // Find all tasks where this user has applied
+	}
+
+	// Define options for sorting - oldest first
+	findOptions := options.Find().
+		SetSort(bson.M{"created_at": 1}) // Sort by oldest first (ascending order)
+
+	// Execute the query
+	cursor, err := tasksCollection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve applied tasks", "details": err.Error()})
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	// Decode results
+	var appliedTasks []models.Task
+	if err := cursor.All(context.TODO(), &appliedTasks); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode tasks", "details": err.Error()})
+		return
+	}
+
+	// Get task creators info to include with each task
+	var tasksWithCreatorInfo []gin.H
+	for _, task := range appliedTasks {
+		var creator models.Users
+		err := usersCollection.FindOne(
+			context.TODO(),
+			bson.M{"email": task.CreatorEmail},
+		).Decode(&creator)
+
+		// Include creator info even if we couldn't find it
+		creatorInfo := gin.H{
+			"name":   "",
+			"email":  task.CreatorEmail,
+			"mobile": "",
+		}
+
+		if err == nil {
+			creatorInfo["name"] = creator.Name
+			creatorInfo["mobile"] = creator.Mobile
+		}
+
+		// Create a sanitized task object without other applicants' information
+		// Only include information that the applicant should see
+		sanitizedTask := gin.H{
+			"id":                 task.ID,
+			"title":              task.Title,
+			"description":        task.Description,
+			"task_time":          task.TaskTime,
+			"task_date":          task.TaskDate,
+			"estimated_pay_rate": task.EstimatedPayRate,
+			"place_of_work":      task.PlaceOfWork,
+			"work_type":          task.WorkType,
+			"people_needed":      task.PeopleNeeded,
+			"creator_email":      task.CreatorEmail,
+			"created_at":         task.CreatedAt,
+			"updated_at":         task.UpdatedAt,
+			"status":             task.Status,
+			"views":              task.Views,
+			"total_applicants":   len(task.Applicants), // Just show the count, not the actual applicants
+			"has_applied":        true,                 // The user has definitely applied since this is their applied tasks list
+		}
+
+		// Add task with creator info
+		tasksWithCreatorInfo = append(tasksWithCreatorInfo, gin.H{
+			"task":    sanitizedTask,
+			"creator": creatorInfo,
+			// Include status information for the application
+			"selected": contains(task.SelectedUsers, viewerEmail),
+		})
+	}
+
+	// Return applied tasks
+	c.JSON(http.StatusOK, gin.H{
+		"applied_tasks": tasksWithCreatorInfo,
+		"count":         len(appliedTasks),
+	})
+}
+
+// Helper function to check if a string is in a slice
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
