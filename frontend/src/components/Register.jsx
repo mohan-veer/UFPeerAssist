@@ -9,8 +9,7 @@ const RegisterForm = () => {
     name: "",
     email: "",
     mobile: "",
-    password: "",
-    confirmEmail: ""
+    password: ""
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -24,94 +23,40 @@ const RegisterForm = () => {
     setError("");
     setSuccess("");
 
-    // Client-side validation
-    if (formData.email !== formData.confirmEmail) {
-      setError("Emails do not match");
-      return;
-    }
-
     try {
       const response = await fetch("http://localhost:8080/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          mobile: formData.mobile,
-          password: formData.password
-        }),
+        body: JSON.stringify(formData),
       });
-
       const data = await response.json();
-      
       if (response.ok) {
         setSuccess("Registration successful! Redirecting to login...");
         setTimeout(() => navigate("/login"), 2000);
       } else {
-        setError(data.error || "Registration failed. Please try again.");
+        setError(data.error || "Registration failed.");
       }
     } catch (err) {
-      setError("Connection to server failed. Check your internet connection.");
+      setError("Something went wrong. Please try again.");
     }
   };
 
   return (
     <div className="register-page">
-      <ParticleBackgroundOtherScreens/>
+      <ParticleBackgroundOtherScreens />
       <div className="register-container">
         <h2 className="center-heading">Create New Account</h2>
         {error && <p className="error">{error}</p>}
         {success && <p className="success">{success}</p>}
-        
         <form onSubmit={handleSubmit}>
-          <label>Full Name *</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-
+          <label>Name *</label>
+          <input type="text" name="name" value={formData.name} onChange={handleChange} required />
           <label>Email Address *</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-
-          <label>Confirm Email Address *</label>
-          <input
-            type="email"
-            name="confirmEmail"
-            value={formData.confirmEmail}
-            onChange={handleChange}
-            required
-          />
-
+          <input type="email" name="email" value={formData.email} onChange={handleChange} required />
           <label>Mobile Number *</label>
-          <input
-            type="tel"
-            name="mobile"
-            value={formData.mobile}
-            onChange={handleChange}
-            pattern="[+]{1}[0-9]{10,15}"
-            placeholder="+1234567890"
-            required
-          />
-
+          <input type="text" name="mobile" value={formData.mobile} onChange={handleChange} required />
           <label>Password *</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            minLength="6"
-            required
-          />
-
+          <input type="password" name="password" value={formData.password} onChange={handleChange} required />
           <button type="submit">Create Account</button>
         </form>
       </div>
