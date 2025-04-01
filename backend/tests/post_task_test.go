@@ -527,4 +527,68 @@ func TestUpdateTaskUnauthorized(t *testing.T) {
 	assert.Equal(t, "Task not found or you don't have permission to update it", response.Error)
 }
 
-// Additional tests for other cases can be added in the same pattern
+//-----------
+
+// Test creating a task for a non-existent user
+func TestCreateTaskUserDoesNotExist(t *testing.T) {
+	pt := &PostTaskTest{}
+	pt.Initialize(t)
+	defer pt.Cleanup(t)
+
+	taskData := map[string]interface{}{
+		"title":              "Ghost User Task",
+		"description":        "Trying to post with non-existent user",
+		"task_time":          "09:00",
+		"task_date":          "2025-04-30",
+		"estimated_pay_rate": 18.0,
+		"place_of_work":      "Dorm",
+		"work_type":          "Plumbing",
+		"people_needed":      1,
+	}
+
+	jsonData, _ := json.Marshal(taskData)
+	req, _ := http.NewRequest("POST", "/tasks/notarealuser@example.com", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	pt.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	var response map[string]string
+	err := json.NewDecoder(w.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Equal(t, "User not found", response["error"])
+}
+
+// Test creating a task with invalid input data (missing required fields)
+func TestCreateTaskInvalidInput(t *testing.T) {
+	pt := &PostTaskTest{}
+	pt.Initialize(t)
+	defer pt.Cleanup(t)
+
+	// Missing required field "description"
+	taskData := map[string]interface{}{
+		"title":              "Incomplete Task",
+		"task_time":          "13:00",
+		"task_date":          "2025-05-01",
+		"estimated_pay_rate": 15.0,
+		"place_of_work":      "Cafeteria",
+		"work_type":          "Tutoring",
+		"people_needed":      1,
+	}
+
+	jsonData, _ := json.Marshal(taskData)
+	req, _ := http.NewRequest("POST", "/tasks/taskcreator@example.com", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	pt.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response map[string]string
+	err := json.NewDecoder(w.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Contains(t, response["error"], "Description")
+}
