@@ -30,9 +30,9 @@ type PostTaskTest struct {
 	cancelCtx context.CancelFunc
 }
 
-// Initialize sets up the test environment
+// Initialize to set up the test env
 func (pt *PostTaskTest) Initialize(t *testing.T) {
-	// Set Gin to test mode
+	// Setting Gin to test mode
 	gin.SetMode(gin.TestMode)
 
 	// Create a context with timeout
@@ -45,23 +45,23 @@ func (pt *PostTaskTest) Initialize(t *testing.T) {
 		t.Fatalf("Failed to connect to test database: %v", err)
 	}
 
-	// Use a test database with a unique name to avoid conflicts
+	// Us9ng a test database with a unique name to avoid conflicts
 	pt.db = pt.client.Database("ufpeerassist_test_post_task")
 
-	// Clear existing data from collections
+	// Clearing existing data from collections
 	pt.db.Collection("users").DeleteMany(pt.ctx, bson.M{})
 	pt.db.Collection("tasks").DeleteMany(pt.ctx, bson.M{})
 
 	// Seed test data
 	pt.seedTestData(t)
 
-	// Initialize router with mock handler
+	// Initializing router with mock handler
 	pt.router = gin.Default()
 	pt.router.POST("/tasks/:email", pt.mockPostATask)
 	pt.router.PUT("/tasks/:email", pt.mockPostATask)
 }
 
-// Cleanup tears down the test environment
+// Cleanup tears down the test environment. this runs after eah fucntion
 func (pt *PostTaskTest) Cleanup(t *testing.T) {
 	// Drop the test database
 	err := pt.db.Drop(pt.ctx)
@@ -297,7 +297,7 @@ func (pt *PostTaskTest) seedTestData(t *testing.T) {
 }
 
 // Test creating a new task
-func TestCreateTaskSuccess(t *testing.T) {
+func TestCreateTaskSuccess(t *testing.T) { // t is curr test context
 	// Initialize test environment
 	pt := &PostTaskTest{}
 	pt.Initialize(t)
@@ -352,7 +352,7 @@ func TestCreateTaskSuccess(t *testing.T) {
 	assert.Equal(t, "taskcreator@example.com", task.CreatorEmail)
 }
 
-// Test updating an existing task
+// Testing updating an existing task
 func TestUpdateTaskSuccess(t *testing.T) {
 	// Initialize test environment
 	pt := &PostTaskTest{}
