@@ -1,0 +1,42 @@
+{
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Math Tutoring Help",
+        "description": "Need help with Calculus homework",
+        "task_date": "2025-04-15",
+        "task_time": "14:00",
+        "estimated_pay_rate": 20,
+        "place_of_work": "Library West",
+        "work_type": "Tutoring",
+        "people_needed": 1,
+        "creator_email": "creator@example.com",
+        "views": 15,
+        "applicants": []
+      },
+      {
+        "id": "2",
+        "title": "Help Moving Furniture",
+        "description": "Need help moving furniture to new apartment",
+        "task_date": "2025-04-20",
+        "task_time": "10:00",
+        "estimated_pay_rate": 25,
+        "place_of_work": "Gainesville Place Apartments",
+        "work_type": "HouseShifting",
+        "people_needed": 2,
+        "creator_email": "creator@example.com",
+        "views": 8,
+        "applicants": ["applicant1@example.com"]
+      }
+    ],
+    "newTask": {
+      "title": "Computer Setup Help",
+      "description": "Need help setting up my new laptop and transferring files",
+      "task_date": "2025-05-01",
+      "task_time": "15:30",
+      "estimated_pay_rate": 18,
+      "place_of_work": "Reitz Union",
+      "work_type": "ComputerHelp",
+      "people_needed": 1
+    }
+  }
