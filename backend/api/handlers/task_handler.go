@@ -3,8 +3,10 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
+	"ufpeerassist/backend/api/utils"
 	"ufpeerassist/backend/models"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +18,7 @@ import (
 
 // tasksCollection is the MongoDB collection for tasks
 var tasksCollection *mongo.Collection
+var scheduledTasksCollection *mongo.Collection
 
 // InitTasksCollection initializes the tasks collection
 func InitTasksCollection() {
@@ -58,6 +61,14 @@ func InitTasksCollection() {
 		}
 
 		fmt.Println("✅ Tasks collection initialized with indexes!")
+	}
+}
+
+func InitScheduledTasksCollection() {
+	if client != nil {
+		db := client.Database("ufpeerassist")
+		scheduledTasksCollection = db.Collection("scheduled_tasks")
+		fmt.Println("Scheduled tasks collection initialized!")
 	}
 }
 
@@ -586,6 +597,24 @@ func AcceptTask(c *gin.Context) {
 		bson.M{"_id": objectID},
 		update,
 	)
+	// to-do: add task to scheduled tasks.
+
+	if err := addTaskToScheduledTasks(task, applicantEmail); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to schedule task"})
+		return
+	}
+
+	// Send email notification
+
+	go func() {
+		if err := utils.SendEmailNotification(applicantEmail, task.Title); err != nil {
+			log.Printf("Failed to send email to %s: %v\n", applicantEmail, err)
+		} else {
+			log.Printf("Email sent successfully to %s\n", applicantEmail)
+		}
+	}()
+
+	// to-do: send email notification to applicant that poster accepted him
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to acept a task", "details": err.Error()})
@@ -595,4 +624,19 @@ func AcceptTask(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully accepted the task",
 	})
+}
+
+func addTaskToScheduledTasks(task models.Task, workerEmail string) error {
+	entry := models.ScheduledTask{
+		TaskID:      task.ID,
+		Title:       task.Title,
+		Poster:      task.CreatorEmail,
+		Worker:      workerEmail,
+		ScheduledAt: time.Now(),
+		TaskDate:    task.TaskDate,
+		TaskTime:    task.TaskTime,
+		Place:       task.PlaceOfWork,
+	}
+	_, err := scheduledTasksCollection.InsertOne(context.TODO(), entry)
+	return err
 }
