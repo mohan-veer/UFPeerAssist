@@ -640,3 +640,61 @@ func addTaskToScheduledTasks(task models.Task, workerEmail string) error {
 	_, err := scheduledTasksCollection.InsertOne(context.TODO(), entry)
 	return err
 }
+
+func GetScheduledTasks(c *gin.Context) {
+	email := c.Param("email")
+
+	//  Verify user exists
+	var user models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Find all scheduled tasks where user is a worker
+	filter := bson.M{"worker_email": email}
+	cursor, err := scheduledTasksCollection.Find(context.TODO(), filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query scheduled_tasks"})
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	var scheduledTasks []models.ScheduledTask
+	if err := cursor.All(context.TODO(), &scheduledTasks); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode scheduled_tasks"})
+		return
+	}
+
+	if len(scheduledTasks) == 0 {
+		c.JSON(http.StatusOK, gin.H{"scheduled_tasks": []models.Task{}, "count": 0})
+		return
+	}
+
+	// Extract task IDs
+	var taskIDs []primitive.ObjectID
+	for _, scheduled := range scheduledTasks {
+		taskIDs = append(taskIDs, scheduled.TaskID)
+	}
+
+	// Fetch full task details
+	taskFilter := bson.M{"_id": bson.M{"$in": taskIDs}}
+	taskCursor, err := tasksCollection.Find(context.TODO(), taskFilter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch full task details"})
+		return
+	}
+	defer taskCursor.Close(context.TODO())
+
+	var tasks []models.Task
+	if err := taskCursor.All(context.TODO(), &tasks); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode tasks"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"scheduled_tasks": tasks,
+		"count":           len(tasks),
+	})
+}

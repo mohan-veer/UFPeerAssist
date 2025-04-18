@@ -63,7 +63,7 @@ func SendEmailNotification(email string, taskTitle string) error {
 
 	err := dialer.DialAndSend(mailer)
 	if err != nil {
-		log.Printf("❌ Failed to send task notification to %s: %v\n", email, err)
+		log.Printf("Failed to send task notification to %s: %v\n", email, err)
 	}
 	return err
 }
