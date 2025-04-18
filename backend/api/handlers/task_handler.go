@@ -532,3 +532,67 @@ func contains(slice []string, item string) bool {
 	}
 	return false
 }
+
+//-------------------------------------------
+
+// ApplyForTask allows a user to apply for a task
+func AcceptTask(c *gin.Context) {
+	// Get task ID from URL parameter
+	taskID := c.Param("task_id")
+
+	// Get applicant's email from URL parameter
+	applicantEmail := c.Param("email")
+
+	// Verify that applicant exists
+	var applicant models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": applicantEmail}).Decode(&applicant)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required. User not found."})
+		return
+	}
+
+	// Convert string ID to ObjectID
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID format"})
+		return
+	}
+
+	// Find the task
+	var task models.Task
+	err = tasksCollection.FindOne(
+		context.TODO(),
+		bson.M{"_id": objectID},
+	).Decode(&task)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		return
+	}
+
+	// Check if task is open
+	if task.Status != models.Open {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Task is not open for applications"})
+		return
+	}
+
+	// Add user to selected list
+	update := bson.M{
+		"$push": bson.M{"selected_users": applicantEmail},
+	}
+
+	_, err = tasksCollection.UpdateOne(
+		context.TODO(),
+		bson.M{"_id": objectID},
+		update,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to acept a task", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully accepted the task",
+	})
+}

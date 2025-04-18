@@ -21,6 +21,7 @@ var client *mongo.Client
 var usersCollection *mongo.Collection
 var authCollection *mongo.Collection
 var otpCollection *mongo.Collection
+var passwordResetReason = "passwordreset"
 
 // Initialize MongoDB connection
 func InitMongoDB() {
@@ -97,9 +98,11 @@ func Signup(c *gin.Context) {
 	callback := func(sessCtx mongo.SessionContext) (interface{}, error) {
 		// Insert user
 		_, err := usersCollection.InsertOne(sessCtx, models.Users{
-			Email:  input.Email,
-			Name:   input.Name,
-			Mobile: input.Mobile,
+			Email:          input.Email,
+			Name:           input.Name,
+			Mobile:         input.Mobile,
+			CompletedTasks: 0,
+			Rating:         "",
 		})
 		if err != nil {
 			return nil, err
@@ -209,7 +212,7 @@ func GenerateOTPForResetPassword(c *gin.Context) {
 	}
 
 	// Send OTP via email (implement `utils.SendOTP`)
-	if err := utils.SendOTP(request.Email, otp); err != nil {
+	if err := utils.SendOTP(passwordResetReason, request.Email, otp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send OTP"})
 		return
 	}
@@ -350,6 +353,7 @@ func GetUserProfile(c *gin.Context) {
 		Email  string `json:"email" bson:"email"`
 		Name   string `json:"name" bson:"name"`
 		Mobile string `json:"mobile" bson:"mobile"`
+		Rating string `json:"rating" bson:"rating"`
 		// Add any other fields you want to include
 	}
 
