@@ -35,4 +35,7 @@ func SetupRoutes(router *gin.Engine) {
 	// // poster accepts a task
 	// router.POST("/tasks/:task_id/accept/:email", )
 
+	router.POST("/tasks/:task_id/end/:email", handlers.EndTask)                  // Worker initiates task completion
+	router.POST("/validate-task-completion", handlers.ValidateTaskCompletionOTP) // Task owner validates completion
+
 }
