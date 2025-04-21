@@ -24,7 +24,7 @@ const DashboardHeader = () => {
         <ul>
           <li><Link to="/dashboard">Home</Link></li>
           <li><Link to="/post-task">Post a Task</Link></li>
-          <li><Link to="/messages">Messages</Link></li>
+          <li><Link to="/notifications">Notifications</Link></li>
         </ul>
       </nav>
       <div className="profile-section">
