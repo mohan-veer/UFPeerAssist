@@ -1,0 +1,74 @@
+/* styles/CompletedTasks.css */
+.completed-tasks-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .completed-tasks-container h2 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .tasks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  .completed-task-card {
+    position: relative;
+  }
+  
+  .completed-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background-color: #28a745;
+    color: white;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .no-tasks {
+    text-align: center;
+    padding: 30px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #6c757d;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+  }
+  
+  .error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  
+  /* Add to TaskCard.css */
+  .task-card.completed-task {
+    border-left: 4px solid #28a745;
+  }
+  
+  .status-completed {
+    color: #28a745;
+    font-weight: bold;
+  }
+  
+  .completed-status {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+  }

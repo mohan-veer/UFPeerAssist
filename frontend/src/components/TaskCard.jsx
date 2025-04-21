@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { getUserEmailFromToken } from "../utils/auth";
 import "../styles/TaskCard.css";
 
-const TaskCard = ({ task, isScheduled = false }) => {  // Add isScheduled prop here
+const TaskCard = ({ task, isScheduled = false, isCompleted = false, hideApplyButton = false }) => {
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
   const [error, setError] = useState("");
@@ -56,8 +56,19 @@ const TaskCard = ({ task, isScheduled = false }) => {  // Add isScheduled prop h
     }
   };
 
+  // Check if the current user is the creator of this task
+  const isCreator = () => {
+    const userEmail = getUserEmailFromToken();
+    return userEmail === task.creator_email;
+  };
+
+  // Determine if apply button should be shown
+  const shouldShowApplyButton = () => {
+    return !hideApplyButton && !isCreator() && !isScheduled && !isCompleted && !applied;
+  };
+
   return (
-    <div className={`task-card ${isScheduled ? 'scheduled-task' : ''}`}>
+    <div className={`task-card ${isScheduled ? 'scheduled-task' : ''} ${isCompleted ? 'completed-task' : ''}`}>
       <div className="task-header">
         <h3>{task.title}</h3>
         <span className="task-category">{task.work_type}</span>
@@ -95,34 +106,46 @@ const TaskCard = ({ task, isScheduled = false }) => {  // Add isScheduled prop h
           <span className="detail-label">Posted By:</span>
           <span className="detail-value">{task.creator_email}</span>
         </div>
+
+        {isCompleted && (
+          <div className="detail-item">
+            <span className="detail-label">Status:</span>
+            <span className="detail-value status-completed">Completed</span>
+          </div>
+        )}
       </div>
       
       {error && <div className="error-message">{error}</div>}
       
       <div className="task-footer">
-        {isScheduled ? (
+        {isCompleted ? (
+          <div className="completed-status">
+            Task completed
+          </div>
+        ) : isScheduled ? (
           <div className="scheduled-badge">
             <span>✓ Scheduled</span>
           </div>
-        ) : (
-          applied ? (
-            <button className="applied-button" disabled>
-              Applied Successfully
-            </button>
-          ) : (
-            <button 
-              className="apply-button" 
-              onClick={handleApply} 
-              disabled={applying}
-            >
-              {applying ? "Applying..." : "Apply for Task"}
-            </button>
-          )
-        )}
+        ) : applied ? (
+          <button className="applied-button" disabled>
+            Applied Successfully
+          </button>
+        ) : shouldShowApplyButton() ? (
+          <button 
+            className="apply-button" 
+            onClick={handleApply} 
+            disabled={applying}
+          >
+            {applying ? "Applying..." : "Apply for Task"}
+          </button>
+        ) : null}
         
         <div className="task-stats">
           <span className="views-count">{task.views || 0} views</span>
           <span className="applicants-count">{task.applicants?.length || 0} applicants</span>
+          {task.selected_users && task.selected_users.length > 0 && (
+            <span className="selected-count">{task.selected_users.length} selected</span>
+          )}
         </div>
       </div>
     </div>

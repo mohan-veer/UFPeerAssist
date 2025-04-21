@@ -10,6 +10,8 @@ const Sidebar = () => {
         <li><Link to="/applied-tasks">Applied Tasks</Link></li>
         <li><Link to="/task-applications">Applications</Link></li>
         <li><Link to="/scheduled-tasks">Scheduled Tasks</Link></li>
+        <li><Link to="/task-verification">Verify Completions</Link></li>
+        <li><Link to="/completed-tasks">Completed Tasks</Link></li>
       </ul>
     </aside>
   );

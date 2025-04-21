@@ -1,0 +1,63 @@
+/* styles/TaskCompletionVerification.css */
+.verification-container {
+    padding: 20px;
+    background-color: #f0f4c3;
+    border-radius: 8px;
+    margin-top: 15px;
+  }
+  
+  .verification-container h3 {
+    margin-top: 0;
+    color: #33691e;
+  }
+  
+  .otp-input-container {
+    margin: 15px 0;
+  }
+  
+  .otp-input-container input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #aed581;
+    border-radius: 4px;
+    font-size: 16px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  
+  .verify-button {
+    background-color: #8bc34a;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s;
+  }
+  
+  .verify-button:hover {
+    background-color: #689f38;
+  }
+  
+  .verify-button:disabled {
+    background-color: #c5e1a5;
+    cursor: not-allowed;
+  }
+  
+  .verification-error {
+    color: #d32f2f;
+    background-color: #ffebee;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+  }
+  
+  .verification-success {
+    background-color: #e8f5e9;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    color: #2e7d32;
+  }
