@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { getUserEmailFromToken } from "../utils/auth";
 import "../styles/TaskCard.css";
 
-const TaskCard = ({ task }) => {
+const TaskCard = ({ task, isScheduled = false }) => {  // Add isScheduled prop here
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
   const [error, setError] = useState("");
@@ -57,7 +57,7 @@ const TaskCard = ({ task }) => {
   };
 
   return (
-    <div className="task-card">
+    <div className={`task-card ${isScheduled ? 'scheduled-task' : ''}`}>
       <div className="task-header">
         <h3>{task.title}</h3>
         <span className="task-category">{task.work_type}</span>
@@ -100,18 +100,24 @@ const TaskCard = ({ task }) => {
       {error && <div className="error-message">{error}</div>}
       
       <div className="task-footer">
-        {applied ? (
-          <button className="applied-button" disabled>
-            Applied Successfully
-          </button>
+        {isScheduled ? (
+          <div className="scheduled-badge">
+            <span>✓ Scheduled</span>
+          </div>
         ) : (
-          <button 
-            className="apply-button" 
-            onClick={handleApply} 
-            disabled={applying}
-          >
-            {applying ? "Applying..." : "Apply for Task"}
-          </button>
+          applied ? (
+            <button className="applied-button" disabled>
+              Applied Successfully
+            </button>
+          ) : (
+            <button 
+              className="apply-button" 
+              onClick={handleApply} 
+              disabled={applying}
+            >
+              {applying ? "Applying..." : "Apply for Task"}
+            </button>
+          )
         )}
         
         <div className="task-stats">

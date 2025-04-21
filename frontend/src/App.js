@@ -5,7 +5,10 @@ import Register from "./components/Register";
 import Dashboard from "./components/Dashboard";
 import UserProfile from "./components/UserProfile";
 import PostTask from "./components/PostTask";
-import MyTasks from "./components/MyTasks"; // Import MyTasks component
+import MyTasks from "./components/MyTasks";
+import ScheduledTasks from "./components/ScheduledTasks"; // Import new component
+import AppliedTasks from "./components/AppliedTasks"; // Import new component
+import TaskApplications from "./components/TaskApplications"; // Import new component
 import HeroSection from "./components/HeroSection";
 import FeaturesSection from "./components/FeaturesSection";
 import TestimonialsSection from "./components/TestimonialsSection";
@@ -69,6 +72,31 @@ function App() {
           element={
             <ProtectedRoute>
               <MyTasks />
+            </ProtectedRoute>
+          }
+        />
+        {/* New Routes */}
+        <Route
+          path="/scheduled-tasks"
+          element={
+            <ProtectedRoute>
+              <ScheduledTasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/applied-tasks"
+          element={
+            <ProtectedRoute>
+              <AppliedTasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task-applications"
+          element={
+            <ProtectedRoute>
+              <TaskApplications />
             </ProtectedRoute>
           }
         />

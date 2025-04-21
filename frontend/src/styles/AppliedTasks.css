@@ -1,0 +1,89 @@
+/* styles/AppliedTasks.css */
+.applied-tasks {
+    padding: 20px;
+  }
+  
+  .applied-tasks h2 {
+    margin-bottom: 20px;
+  }
+  
+  .applied-tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .applied-task-card {
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+  }
+  
+  .applied-task-card.selected {
+    border-left: 4px solid #4caf50;
+  }
+  
+  .task-info h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .task-description {
+    margin-bottom: 15px;
+    color: #555;
+  }
+  
+  .task-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .task-creator {
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 6px;
+  }
+  
+  .task-creator h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .application-status {
+    grid-column: span 2;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+  }
+  
+  .selected-status {
+    background-color: #e8f5e9;
+  }
+  
+  .pending-status {
+    background-color: #fff8e1;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .selected-status .status-badge {
+    background-color: #4caf50;
+    color: white;
+  }
+  
+  .pending-status .status-badge {
+    background-color: #ffc107;
+    color: #333;
+  }

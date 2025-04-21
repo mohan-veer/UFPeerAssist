@@ -118,6 +118,19 @@
   font-size: 14px;
 }
 
+.task-card.scheduled-task {
+  border-left: 4px solid #4caf50;
+}
+
+.scheduled-badge {
+  background-color: #4caf50;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  display: inline-block;
+}
+
 @media (max-width: 768px) {
   .task-details {
     grid-template-columns: 1fr;
