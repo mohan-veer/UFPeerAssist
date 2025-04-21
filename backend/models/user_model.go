@@ -4,9 +4,11 @@ import "time"
 
 // User model (Users Table)
 type Users struct {
-	Email  string `gorm:"primaryKey" json:"email"`
-	Name   string `json:"name"`
-	Mobile string `json:"mobile"`
+	Email          string `gorm:"primaryKey" json:"email"`
+	Name           string `json:"name"`
+	Mobile         string `json:"mobile"`
+	CompletedTasks int    `json:"completedTasks"`
+	Rating         string `json:"rating"`
 }
 
 // UserAuth model (UserAuth Table)

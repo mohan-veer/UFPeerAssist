@@ -3,8 +3,10 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
+	"ufpeerassist/backend/api/utils"
 	"ufpeerassist/backend/models"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +18,7 @@ import (
 
 // tasksCollection is the MongoDB collection for tasks
 var tasksCollection *mongo.Collection
+var scheduledTasksCollection *mongo.Collection
 
 // InitTasksCollection initializes the tasks collection
 func InitTasksCollection() {
@@ -58,6 +61,14 @@ func InitTasksCollection() {
 		}
 
 		fmt.Println("✅ Tasks collection initialized with indexes!")
+	}
+}
+
+func InitScheduledTasksCollection() {
+	if client != nil {
+		db := client.Database("ufpeerassist")
+		scheduledTasksCollection = db.Collection("scheduled_tasks")
+		fmt.Println("Scheduled tasks collection initialized!")
 	}
 }
 
@@ -531,4 +542,159 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+//-------------------------------------------
+
+// ApplyForTask allows a user to apply for a task
+func AcceptTask(c *gin.Context) {
+	// Get task ID from URL parameter
+	taskID := c.Param("task_id")
+
+	// Get applicant's email from URL parameter
+	applicantEmail := c.Param("email")
+
+	// Verify that applicant exists
+	var applicant models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": applicantEmail}).Decode(&applicant)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required. User not found."})
+		return
+	}
+
+	// Convert string ID to ObjectID
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID format"})
+		return
+	}
+
+	// Find the task
+	var task models.Task
+	err = tasksCollection.FindOne(
+		context.TODO(),
+		bson.M{"_id": objectID},
+	).Decode(&task)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		return
+	}
+
+	// Check if task is open
+	if task.Status != models.Open {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Task is not open for applications"})
+		return
+	}
+
+	// Add user to selected list
+	update := bson.M{
+		"$push": bson.M{"selected_users": applicantEmail},
+	}
+
+	_, err = tasksCollection.UpdateOne(
+		context.TODO(),
+		bson.M{"_id": objectID},
+		update,
+	)
+	// to-do: add task to scheduled tasks.
+
+	if err := addTaskToScheduledTasks(task, applicantEmail); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to schedule task"})
+		return
+	}
+
+	// Send email notification
+
+	go func() {
+		if err := utils.SendEmailNotification(applicantEmail, task.Title); err != nil {
+			log.Printf("Failed to send email to %s: %v\n", applicantEmail, err)
+		} else {
+			log.Printf("Email sent successfully to %s\n", applicantEmail)
+		}
+	}()
+
+	// to-do: send email notification to applicant that poster accepted him
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to acept a task", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully accepted the task",
+	})
+}
+
+func addTaskToScheduledTasks(task models.Task, workerEmail string) error {
+	entry := models.ScheduledTask{
+		TaskID:      task.ID,
+		Title:       task.Title,
+		Poster:      task.CreatorEmail,
+		Worker:      workerEmail,
+		ScheduledAt: time.Now(),
+		TaskDate:    task.TaskDate,
+		TaskTime:    task.TaskTime,
+		Place:       task.PlaceOfWork,
+	}
+	_, err := scheduledTasksCollection.InsertOne(context.TODO(), entry)
+	return err
+}
+
+func GetScheduledTasks(c *gin.Context) {
+	email := c.Param("email")
+
+	//  Verify user exists
+	var user models.Users
+	err := usersCollection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Find all scheduled tasks where user is a worker
+	filter := bson.M{"worker_email": email}
+	cursor, err := scheduledTasksCollection.Find(context.TODO(), filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query scheduled_tasks"})
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	var scheduledTasks []models.ScheduledTask
+	if err := cursor.All(context.TODO(), &scheduledTasks); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode scheduled_tasks"})
+		return
+	}
+
+	if len(scheduledTasks) == 0 {
+		c.JSON(http.StatusOK, gin.H{"scheduled_tasks": []models.Task{}, "count": 0})
+		return
+	}
+
+	// Extract task IDs
+	var taskIDs []primitive.ObjectID
+	for _, scheduled := range scheduledTasks {
+		taskIDs = append(taskIDs, scheduled.TaskID)
+	}
+
+	// Fetch full task details
+	taskFilter := bson.M{"_id": bson.M{"$in": taskIDs}}
+	taskCursor, err := tasksCollection.Find(context.TODO(), taskFilter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch full task details"})
+		return
+	}
+	defer taskCursor.Close(context.TODO())
+
+	var tasks []models.Task
+	if err := taskCursor.All(context.TODO(), &tasks); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode tasks"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"scheduled_tasks": tasks,
+		"count":           len(tasks),
+	})
 }

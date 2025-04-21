@@ -29,5 +29,10 @@ func SetupRoutes(router *gin.Engine) {
 	router.GET("/tasks/feed/:viewer_email", handlers.GetAllTasksForUser) // Get all available tasks
 	router.GET("/appliedtasks/:viewer_email", handlers.GetAppliedTasks)  // get all the taks that user applied for
 	router.POST("/tasks/:task_id/apply/:email", handlers.ApplyForTask)   // Apply for a task
+	router.POST("/tasks/:task_id/accept/:email", handlers.AcceptTask)    // accept a task
+	router.GET("/scheduled-tasks/:email", handlers.GetScheduledTasks)
+
+	// // poster accepts a task
+	// router.POST("/tasks/:task_id/accept/:email", )
 
 }

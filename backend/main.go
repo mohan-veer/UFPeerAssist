@@ -13,6 +13,7 @@ func main() {
 
 	handlers.InitMongoDB()
 	handlers.InitTasksCollection()
+	handlers.InitScheduledTasksCollection()
 
 	router := gin.Default()
 

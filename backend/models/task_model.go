@@ -55,3 +55,15 @@ type Task struct {
 	Applicants    []string   `bson:"applicants" json:"applicants"`         // List of emails of users who applied
 	SelectedUsers []string   `bson:"selected_users" json:"selected_users"` // List of emails of users selected for the task
 }
+
+type ScheduledTask struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	TaskID      primitive.ObjectID `bson:"task_id" json:"task_id"`
+	Title       string             `bson:"title" json:"title"`
+	Poster      string             `bson:"poster_email" json:"poster_email"`
+	Worker      string             `bson:"worker_email" json:"worker_email"`
+	ScheduledAt time.Time          `bson:"scheduled_at" json:"scheduled_at"`
+	TaskDate    time.Time          `bson:"task_date" json:"task_date"`
+	TaskTime    string             `bson:"task_time" json:"task_time"`
+	Place       string             `bson:"place_of_work" json:"place_of_work"`
+}
