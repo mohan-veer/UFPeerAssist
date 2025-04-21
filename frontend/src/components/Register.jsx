@@ -15,7 +15,6 @@ const RegisterForm = () => {
   const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
-    console.log("event: ",e)
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 

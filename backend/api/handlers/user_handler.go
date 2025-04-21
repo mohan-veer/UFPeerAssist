@@ -350,10 +350,11 @@ func GetUserProfile(c *gin.Context) {
 
 	// Define a struct to hold the user data
 	type UserProfile struct {
-		Email  string `json:"email" bson:"email"`
-		Name   string `json:"name" bson:"name"`
-		Mobile string `json:"mobile" bson:"mobile"`
-		Rating string `json:"rating" bson:"rating"`
+		Email          string `json:"email" bson:"email"`
+		Name           string `json:"name" bson:"name"`
+		Mobile         string `json:"mobile" bson:"mobile"`
+		Rating         string `json:"rating" bson:"rating"`
+		CompletedTasks int    `json:"completed_tasks" bson:"completed_tasks"`
 		// Add any other fields you want to include
 	}
 
