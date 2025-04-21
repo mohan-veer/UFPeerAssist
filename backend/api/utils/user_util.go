@@ -69,3 +69,30 @@ func SendEmailNotification(email string, taskTitle string) error {
 	}
 	return err
 }
+
+// Add this function to your utils/user_util.go file
+
+// SendTaskCompletionOTP sends an OTP to the task owner for task completion validation
+func SendTaskCompletionOTP(email, otp, taskTitle string) error {
+	mailer := gomail.NewMessage()
+	mailer.SetHeader("From", "jamusvenkatesh@gmail.com")
+	mailer.SetHeader("To", email)
+	mailer.SetHeader("Subject", "Task Completion Verification")
+
+	body := fmt.Sprintf(
+		"A worker has completed your task: %s.\n\n"+
+			"Your OTP for verifying task completion is: %s\n\n"+
+			"This OTP is valid for 30 minutes. Please provide this code to complete the task process.",
+		taskTitle, otp,
+	)
+
+	mailer.SetBody("text/plain", body)
+
+	dialer := gomail.NewDialer("smtp.sendgrid.net", 587, "apikey", "")
+
+	err := dialer.DialAndSend(mailer)
+	if err != nil {
+		log.Printf("Failed to send task completion OTP to %s: %v\n", email, err)
+	}
+	return err
+}

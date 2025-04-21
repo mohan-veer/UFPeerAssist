@@ -698,3 +698,195 @@ func GetScheduledTasks(c *gin.Context) {
 		"count":           len(tasks),
 	})
 }
+
+func EndTask(c *gin.Context) {
+	// Get task ID and worker email from URL parameters
+	taskID := c.Param("task_id")
+	workerEmail := c.Param("email")
+
+	// Convert string ID to MongoDB ObjectID
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID format"})
+		return
+	}
+
+	// Find the task in the database
+	var task models.Task
+	err = tasksCollection.FindOne(
+		context.TODO(),
+		bson.M{"_id": objectID},
+	).Decode(&task)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		return
+	}
+
+	// Verify that the worker is one of the selected users for this task
+	isSelected := false
+	for _, email := range task.SelectedUsers {
+		if email == workerEmail {
+			isSelected = true
+			break
+		}
+	}
+
+	if !isSelected {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to end this task"})
+		return
+	}
+
+	// Generate OTP for task owner
+	otp := utils.GenerateOTP()
+	expirationTime := time.Now().Add(30 * time.Minute) // OTP valid for 30 minutes
+
+	// Store OTP with task context in the database
+	_, err = otpCollection.UpdateOne(
+		context.TODO(),
+		bson.M{"email": task.CreatorEmail, "task_id": objectID},
+		bson.M{"$set": bson.M{
+			"code":         otp,
+			"expires_at":   expirationTime,
+			"context":      "task_completion",
+			"task_id":      objectID,
+			"worker_email": workerEmail,
+		}},
+		options.Update().SetUpsert(true),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate OTP"})
+		return
+	}
+
+	// Send OTP to task owner asynchronously
+	go func() {
+		if err := utils.SendTaskCompletionOTP(task.CreatorEmail, otp, task.Title); err != nil {
+			log.Printf("Failed to send OTP to %s: %v\n", task.CreatorEmail, err)
+		} else {
+			log.Printf("Task completion OTP sent successfully to %s\n", task.CreatorEmail)
+		}
+	}()
+
+	// Return success response
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Task completion OTP sent to the task owner",
+		"task_title": task.Title,
+		"task_owner": task.CreatorEmail,
+	})
+}
+
+func ValidateTaskCompletionOTP(c *gin.Context) {
+	// JSON request structure
+	var request struct {
+		TaskID string `json:"task_id" binding:"required"`
+		Email  string `json:"email" binding:"required,email"` // Task owner's email
+		OTP    string `json:"otp" binding:"required"`
+	}
+
+	// Validate request format
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	// Convert string ID to MongoDB ObjectID
+	objectID, err := primitive.ObjectIDFromHex(request.TaskID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID format"})
+		return
+	}
+
+	// Check if OTP exists and is valid
+	var storedOTP models.TaskCompletionOTP
+	err = otpCollection.FindOne(
+		context.TODO(),
+		bson.M{
+			"email":   request.Email,
+			"code":    request.OTP,
+			"task_id": objectID,
+			"context": "task_completion",
+		},
+	).Decode(&storedOTP)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired OTP"})
+		return
+	}
+
+	// Start MongoDB transaction for atomic updates
+	session, err := client.StartSession()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer session.EndSession(context.TODO())
+
+	// Transaction Function - all operations succeed or fail together
+	callback := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// Update task status to Completed
+		_, err = tasksCollection.UpdateOne(
+			sessCtx,
+			bson.M{"_id": objectID},
+			bson.M{"$set": bson.M{
+				"status":     models.Completed,
+				"updated_at": time.Now(),
+			}},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Update scheduled task status
+		_, err = scheduledTasksCollection.UpdateOne(
+			sessCtx,
+			bson.M{"task_id": objectID},
+			bson.M{"$set": bson.M{
+				"status":       "Completed",
+				"completed_at": time.Now(),
+			}},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Increment completed tasks count for the worker
+		_, err = usersCollection.UpdateOne(
+			sessCtx,
+			bson.M{"email": storedOTP.WorkerEmail},
+			bson.M{"$inc": bson.M{"completed_tasks": 1}},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Delete OTP after successful validation
+		_, err = otpCollection.DeleteOne(
+			sessCtx,
+			bson.M{
+				"email":   request.Email,
+				"task_id": objectID,
+				"context": "task_completion",
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	// Execute transaction
+	_, err = session.WithTransaction(context.TODO(), callback)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Transaction failed", "details": err.Error()})
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Task completed successfully!",
+		"task_id": request.TaskID,
+	})
+}
