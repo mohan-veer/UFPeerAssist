@@ -62,6 +62,14 @@ function App() {
           }
         />
         <Route
+          path="/profile/:email"
+          element={
+            <ProtectedRoute>
+              <UserProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/post-task"
           element={
             <ProtectedRoute>
