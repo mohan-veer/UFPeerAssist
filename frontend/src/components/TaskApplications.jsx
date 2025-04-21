@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getUserEmailFromToken } from "../utils/auth";
+import DashboardHeader from "./DashboardHeader";
 import "../styles/TaskApplications.css";
 
 const TaskApplications = () => {
@@ -105,81 +107,104 @@ const TaskApplications = () => {
     });
   };
 
-  if (loading) return <div className="loading">Loading your tasks...</div>;
-  if (error) return <div className="error-message">{error}</div>;
+  if (loading) {
+    return (
+      <div>
+        <DashboardHeader />
+        <div className="loading">Loading your tasks...</div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div>
+        <DashboardHeader />
+        <div className="error-message">{error}</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="task-applications">
-      <h2>Task Applications</h2>
-      
-      {myTasks.length === 0 ? (
-        <p className="no-tasks">You haven't created any tasks yet.</p>
-      ) : (
-        <div className="tasks-with-applicants">
-          {myTasks.map(task => {
-            const limitReached = hasReachedLimit(task);
-            return (
-              <div key={task._id || task.id} className="task-with-applicants">
-                <div className="task-info">
-                  <h3>{task.title}</h3>
-                  <div className="task-details">
-                    <div><strong>Date:</strong> {formatDate(task.task_date)}</div>
-                    <div><strong>Time:</strong> {task.task_time}</div>
-                    <div><strong>Pay Rate:</strong> ${task.estimated_pay_rate}/hr</div>
-                    <div><strong>Location:</strong> {task.place_of_work}</div>
-                    <div><strong>Status:</strong> {task.status}</div>
-                    <div><strong>People Needed:</strong> {task.people_needed}</div>
-                    <div><strong>People Selected:</strong> {task.selected_users?.length || 0} / {task.people_needed}</div>
+    <div>
+      <DashboardHeader />
+      <div className="task-applications-container">
+        <h2>Task Applications</h2>
+        
+        {myTasks.length === 0 ? (
+          <p className="no-tasks">You haven't created any tasks yet.</p>
+        ) : (
+          <div className="tasks-with-applicants">
+            {myTasks.map(task => {
+              const limitReached = hasReachedLimit(task);
+              return (
+                <div key={task._id || task.id} className="task-with-applicants">
+                  <div className="task-info">
+                    <h3>{task.title}</h3>
+                    <div className="task-details">
+                      <div><strong>Date:</strong> {formatDate(task.task_date)}</div>
+                      <div><strong>Time:</strong> {task.task_time}</div>
+                      <div><strong>Pay Rate:</strong> ${task.estimated_pay_rate}/hr</div>
+                      <div><strong>Location:</strong> {task.place_of_work}</div>
+                      <div><strong>Status:</strong> {task.status}</div>
+                      <div><strong>People Needed:</strong> {task.people_needed}</div>
+                      <div><strong>People Selected:</strong> {task.selected_users?.length || 0} / {task.people_needed}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="applicants-section">
+                    <h4>Applicants ({task.applicants?.length || 0})</h4>
+                    {limitReached && (
+                      <div className="limit-reached-warning">
+                        Maximum number of people ({task.people_needed}) already selected for this task.
+                      </div>
+                    )}
+                    {task.applicants && task.applicants.length > 0 ? (
+                      <ul className="applicants-list">
+                        {task.applicants.map(applicantEmail => {
+                          const isSelected = task.selected_users && task.selected_users.includes(applicantEmail);
+                          return (
+                            <li key={applicantEmail} className={isSelected ? 'selected-applicant' : ''}>
+                              <div className="applicant-info">
+                                <Link 
+                                  to={`/profile?email=${encodeURIComponent(applicantEmail)}`} 
+                                  className="applicant-email"
+                                >
+                                  {applicantEmail}
+                                </Link>
+                                {isSelected && <span className="selected-badge">Selected</span>}
+                              </div>
+                              {!isSelected && !limitReached && (
+                                <button 
+                                  className="accept-applicant-btn"
+                                  onClick={() => handleAcceptApplicant(task._id || task.id, applicantEmail)}
+                                  disabled={actionInProgress}
+                                >
+                                  {actionInProgress ? "Processing..." : "Accept"}
+                                </button>
+                              )}
+                              {!isSelected && limitReached && (
+                                <button 
+                                  className="accept-applicant-btn disabled"
+                                  disabled={true}
+                                >
+                                  Limit Reached
+                                </button>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="no-applicants">No applicants yet.</p>
+                    )}
                   </div>
                 </div>
-                
-                <div className="applicants-section">
-                  <h4>Applicants ({task.applicants?.length || 0})</h4>
-                  {limitReached && (
-                    <div className="limit-reached-warning">
-                      Maximum number of people ({task.people_needed}) already selected for this task.
-                    </div>
-                  )}
-                  {task.applicants && task.applicants.length > 0 ? (
-                    <ul className="applicants-list">
-                      {task.applicants.map(applicantEmail => {
-                        const isSelected = task.selected_users && task.selected_users.includes(applicantEmail);
-                        return (
-                          <li key={applicantEmail} className={isSelected ? 'selected-applicant' : ''}>
-                            <div className="applicant-info">
-                              <div className="applicant-email">{applicantEmail}</div>
-                              {isSelected && <span className="selected-badge">Selected</span>}
-                            </div>
-                            {!isSelected && !limitReached && (
-                              <button 
-                                className="accept-applicant-btn"
-                                onClick={() => handleAcceptApplicant(task._id || task.id, applicantEmail)}
-                                disabled={actionInProgress}
-                              >
-                                {actionInProgress ? "Processing..." : "Accept"}
-                              </button>
-                            )}
-                            {!isSelected && limitReached && (
-                              <button 
-                                className="accept-applicant-btn disabled"
-                                disabled={true}
-                              >
-                                Limit Reached
-                              </button>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="no-applicants">No applicants yet.</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

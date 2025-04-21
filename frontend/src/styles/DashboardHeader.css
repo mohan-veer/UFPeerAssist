@@ -74,7 +74,34 @@
   .logout-button:hover {
     background-color: #c0392b; /* Darker red on hover */
   }
-  
+
+
+  .avatar-initials {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  .profile-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+    margin-right: 15px;
+  }
+
+  .profile-link img,
+  .profile-link .avatar-initials {
+    margin-right: 10px;
+  }
+    
   /* 🔹 Responsive Design Adjustments */
   @media (max-width: 768px) {
     .dashboard-header {

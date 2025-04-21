@@ -9,6 +9,8 @@ import MyTasks from "./components/MyTasks";
 import ScheduledTasks from "./components/ScheduledTasks"; // Import new component
 import AppliedTasks from "./components/AppliedTasks"; // Import new component
 import TaskApplications from "./components/TaskApplications"; // Import new component
+import TaskVerification from "./components/TaskVerification"; // Import new component
+import CompletedTasks from "./components/CompletedTasks"; // Import new component
 import HeroSection from "./components/HeroSection";
 import FeaturesSection from "./components/FeaturesSection";
 import TestimonialsSection from "./components/TestimonialsSection";
@@ -60,6 +62,14 @@ function App() {
           }
         />
         <Route
+          path="/profile/:email"
+          element={
+            <ProtectedRoute>
+              <UserProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/post-task"
           element={
             <ProtectedRoute>
@@ -97,6 +107,22 @@ function App() {
           element={
             <ProtectedRoute>
               <TaskApplications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task-verification"
+          element={
+            <ProtectedRoute>
+              <TaskVerification />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/completed-tasks"
+          element={
+            <ProtectedRoute>
+              <CompletedTasks />
             </ProtectedRoute>
           }
         />

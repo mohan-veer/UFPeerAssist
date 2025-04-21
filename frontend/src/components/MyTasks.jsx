@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getUserEmailFromToken } from "../utils/auth";
 import TaskCard from "./TaskCard";
+import DashboardHeader from "./DashboardHeader";
 import "../styles/MyTasks.css";
 
 const MyTasks = () => {
@@ -37,7 +38,12 @@ const MyTasks = () => {
         const data = await response.json();
         console.log("Received data:", data);
 
-        setTasks(data.tasks || []);
+        // Filter out completed tasks for this view
+        const activeTasks = (data.tasks || []).filter(task => 
+          task.status !== "Completed"
+        );
+
+        setTasks(activeTasks);
       } catch (err) {
         console.error("Error fetching tasks:", err);
         setError(`Failed to load tasks: ${err.message}`);
@@ -50,25 +56,32 @@ const MyTasks = () => {
   }, []);
 
   return (
-    <div className="my-tasks">
-      <h2>My Tasks</h2>
-      
-      {loading && <div className="loading">Loading your tasks...</div>}
-      {error && <div className="error-message">{error}</div>}
-      
-      {!loading && !error && (
-        <>
-          {tasks.length > 0 ? (
-            <div className="tasks-list">
-              {tasks.map(task => (
-                <TaskCard key={task.id || task._id} task={task} />
-              ))}
-            </div>
-          ) : (
-            <p className="no-tasks">You haven't created any tasks yet.</p>
-          )}
-        </>
-      )}
+    <div>
+      <DashboardHeader />
+      <div className="my-tasks-container">
+        <h2>My Tasks</h2>
+        
+        {loading && <div className="loading">Loading your tasks...</div>}
+        {error && <div className="error-message">{error}</div>}
+        
+        {!loading && !error && (
+          <>
+            {tasks.length > 0 ? (
+              <div className="tasks-list">
+                {tasks.map(task => (
+                  <TaskCard 
+                    key={task.id || task._id} 
+                    task={task} 
+                    hideApplyButton={true} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="no-tasks">You haven't created any active tasks yet.</p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

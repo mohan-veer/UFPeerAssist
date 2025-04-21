@@ -88,6 +88,9 @@ const LoginPage = () => {
         <div className="forgot-password">
           <a href="/reset">Forgot Password?</a>
         </div>
+        <div className="register">
+          <a href="/register">Don't have an account?</a>
+        </div>
         {error && <p className="error">{error}</p>}
       </div>
     </div>
